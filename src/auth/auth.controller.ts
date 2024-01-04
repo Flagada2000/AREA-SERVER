@@ -1,13 +1,15 @@
-import { Controller, Post, Body, Get, Res, Req } from '@nestjs/common';
+import { Controller, Post, Body, Get, Res, Req, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { Response, Request } from 'express';
 import { validate } from 'class-validator';
-import { get } from 'http';
+import { AuthGuard } from '@nestjs/passport';
+import { JwtService } from '@nestjs/jwt';
+import axios from 'axios';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService, private jwtService: JwtService) {}
 
   @Get('signin')
   async signIn(@Req() request: Request) {
@@ -42,14 +44,29 @@ export class AuthController {
     }
   }
 
-  @Get('test-token')
-  async testToken(@Req() request: Request, @Res() response: Response) {
-      const accessToken = request.cookies['accessToken'];
+  @Get('github')
+  @UseGuards(AuthGuard('github'))
+  async login() {
+    //
+  }
 
-      if (accessToken) {
-          return response.status(200).json({ message: 'Access token is present', token: accessToken });
-      } else {
-          return response.status(401).json({ message: 'No access token found' });
-      }
+  @Get('callback')
+  @UseGuards(AuthGuard('github'))
+  async authCallback(@Req() req, @Res() res: Response) {
+    const user = req.user;
+    const githubAccessToken = user.accessToken; // Récupère le token d'accès GitHub
+
+    console.log(user);
+    res.cookie('githubAccessToken', githubAccessToken, { httpOnly: false });
+
+    axios.get('https://api.github.com/user/emails', {
+      headers: { Authorization: `token ${githubAccessToken}` }
+    }).then(response => {
+      console.log(response.data);
+    }).catch(error => {
+      console.error(error);
+    });
+    // Redirige vers le front-end
+    res.redirect(`http://localhost:3000/profile`);
   }
 }

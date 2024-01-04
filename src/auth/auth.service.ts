@@ -1,5 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
+import { generate } from 'generate-password'
 
 @Injectable()
 export class AuthService {
@@ -49,4 +50,41 @@ export class AuthService {
       return data;
     }
   }
+
+  async signInWithGithub() {
+    const { data, error } = await this.supabase.auth.signInWithOAuth({
+      provider: 'github',
+    })
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return await this.supabase.auth.getSession();
+  }
+
+  // async signInOrSignUpWithGithub(email: string, access_token: string) {
+  //   const { data, error } = await this.supabase.auth.signUp({
+  //     email: email,
+  //     password: generate({ length: 12, numbers: true }),
+  //   });
+
+
+  //   if (error.status === '409') {
+  //     const { data, error } = await this.supabase.auth.signIn({
+  //       email: email,
+  //       provider: 'github',
+  //       access_token: access_token,
+  //     });
+
+  //     if (error) {
+  //       throw new Error(error.message);
+  //     }
+
+  //     return data;
+
+  //   }
+
+  //   return data;
+  // }
 }
