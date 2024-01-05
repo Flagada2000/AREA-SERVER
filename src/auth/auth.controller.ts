@@ -4,12 +4,11 @@ import { LoginDto } from './dto/login.dto';
 import { Response, Request } from 'express';
 import { validate } from 'class-validator';
 import { AuthGuard } from '@nestjs/passport';
-import { JwtService } from '@nestjs/jwt';
 import axios from 'axios';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService, private jwtService: JwtService) {}
+  constructor(private authService: AuthService) {}
 
   @Get('signin')
   async signIn(@Req() request: Request) {

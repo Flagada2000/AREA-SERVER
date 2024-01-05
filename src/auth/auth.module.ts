@@ -1,24 +1,23 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { GithubStrategy } from './auth.strategy';
-import { JwtModule } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
+import { AuthMiddleware } from './auth.middleware'; // Import your AuthMiddleware
 
 @Module({
-  imports: [SupabaseModule,
-    JwtModule.registerAsync({
-      useFactory: async (configService: ConfigService) => {
-        return {
-          signOptions: { expiresIn: '10h' },
-          secret: configService.get<string>('JWT_SECRET'),
-        };
-      },
-      inject: [ConfigService],
-    }),],
+  imports: [SupabaseModule],
   providers: [AuthService, GithubStrategy],
-  // providers: [AuthService],
   controllers: [AuthController],
 })
-export class AuthModule {}
+
+export class AuthModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(AuthMiddleware) // Apply your AuthMiddleware
+      .forRoutes(
+        { path: 'auth/me', method: RequestMethod.GET } // Specify the route to protect
+      );
+  }
+}
+
