@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { CreateUserActionDto, UpdateUserActionDto } from './dto/create-action.dto';
+import { CreateUserActionDto, UpdateUserActionDto } from './dto/action.dto';
 import { SupabaseClient } from '@supabase/supabase-js';
 
 @Injectable()

@@ -14,10 +14,10 @@ import { ActionService } from './action.service';
 import {
   CreateUserActionDto,
   UpdateUserActionDto,
-} from './dto/create-action.dto';
+} from './dto/action.dto';
 import { AuthService } from '../auth/auth.service';
 
-@Controller('actions')
+@Controller('action')
 export class ActionController {
   constructor(
     private readonly actionService: ActionService,
