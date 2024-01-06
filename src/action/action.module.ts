@@ -18,6 +18,6 @@ export class ActionModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(AuthMiddleware)
-      .forRoutes({ path: 'actions/create', method: RequestMethod.POST });
+      .forRoutes({ path: 'actions/', method: RequestMethod.POST });
   }
 }
