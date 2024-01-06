@@ -7,6 +7,9 @@ import { AppController } from './app.controller';
 import { ActionController } from './action/action.controller';
 import { ActionService } from './action/action.service';
 import { ActionModule } from './action/action.module';
+import { ServiceModule } from './service/service.module';
+import { ServiceController } from './service/service.controller';
+import { ServiceService } from './service/service.service';
 
 @Module({
   imports: [
@@ -16,8 +19,9 @@ import { ActionModule } from './action/action.module';
     AuthModule,
     SupabaseModule,
     ActionModule,
+    ServiceModule,
   ],
-  controllers: [AppController, ActionController],
-  providers: [AppService, ActionService],
+  controllers: [AppController, ActionController, ServiceController],
+  providers: [AppService, ActionService, ServiceService],
 })
 export class AppModule {}
