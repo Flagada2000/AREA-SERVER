@@ -6,6 +6,7 @@ import { GithubStrategy } from './auth.strategy';
 import { AuthMiddleware } from './auth.middleware'; // Import your AuthMiddleware
 
 @Module({
+  exports: [AuthService],
   imports: [SupabaseModule],
   providers: [AuthService, GithubStrategy],
   controllers: [AuthController],
