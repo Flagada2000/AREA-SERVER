@@ -1,35 +1,46 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
 import axios from 'axios';
+import { Request, Response, NextFunction } from 'express';
+import * as jwt from 'jsonwebtoken';
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
   async use(req: Request, res: Response, next: NextFunction) {
-    const token = req.cookies['accessToken']; // Replace with your cookie name
+    const token = req.cookies['accessToken']; // Your cookie name
 
-    console.log(token);
     if (!token) {
-      return res.status(401).send('Unauthorized');
+      return res.status(401).json({ message: 'Access token is missing' });
     }
 
     try {
-      const response = await axios.get(
-        `${process.env.SUPABASE_API_URL}/auth/v1/user`,
-        {
-          headers: { Authorization: `Bearer ${token}`, apikey: `${process.env.SUPABASE_ANON_KEY}` },
-        },
-      );
+      const decodedToken = jwt.decode(token) as jwt.JwtPayload;
+      const isExpired = decodedToken && Date.now() >= decodedToken.exp * 1000;
 
-      if (response.status === 200) {
-        console.log(response.data);
-        next();
+      if (isExpired) {
+        const refreshToken = req.cookies['refreshToken'];
+        if (!refreshToken) {
+          return res.status(401).json({ message: 'Refresh token not found' });
+        }
+
+        const newTokenResponse = await axios.post(`${process.env.SUPABASE_API_URL}/auth/v1/token`, {
+          refresh_token: refreshToken,
+          grant_type: 'refresh_token',
+        });
+
+        const newAccessToken = newTokenResponse.data.access_token;
+        if (newAccessToken) {
+          res.cookie('accessToken', newAccessToken, { httpOnly: true });
+          req.cookies['accessToken'] = newAccessToken;
+          next();
+        } else {
+          return res.status(401).json({ message: 'Unable to refresh access token' });
+        }
       } else {
-        console.log(response.data);
-        res.status(401).send('Unauthorized');
+        next();
       }
     } catch (error) {
-      console.log(error);
-      res.status(401).send('Unauthorized');
+      console.error('Error in AuthMiddleware:', error.message || error);
+      return res.status(500).json({ message: 'Internal Server Error' });
     }
   }
 }
