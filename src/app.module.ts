@@ -10,6 +10,9 @@ import { ActionModule } from './action/action.module';
 import { ServiceModule } from './service/service.module';
 import { ServiceController } from './service/service.controller';
 import { ServiceService } from './service/service.service';
+import { ReactionController } from './reaction/reaction.controller';
+import { ReactionService } from './reaction/reaction.service';
+import { ReactionModule } from './reaction/reaction.module';
 
 @Module({
   imports: [
@@ -20,8 +23,9 @@ import { ServiceService } from './service/service.service';
     SupabaseModule,
     ActionModule,
     ServiceModule,
+    ReactionModule,
   ],
-  controllers: [AppController, ActionController, ServiceController],
-  providers: [AppService, ActionService, ServiceService],
+  controllers: [AppController, ActionController, ServiceController, ReactionController],
+  providers: [AppService, ActionService, ServiceService, ReactionService],
 })
 export class AppModule {}
