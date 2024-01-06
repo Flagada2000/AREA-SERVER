@@ -5,8 +5,14 @@ export class CreateActionDto {
 }
 
 export class CreateUserActionDto {
-    readonly id: number;
     readonly user_id: string;
     readonly action_id: number;
     readonly action_config: string;
+}
+
+export class UpdateUserActionDto {
+    user_id: string;
+    action_id: number;
+    action_config: string;
+    id: number;
 }
