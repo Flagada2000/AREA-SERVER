@@ -15,10 +15,12 @@ import { Response, Request } from 'express';
 import { validate } from 'class-validator';
 import { AuthGuard } from '@nestjs/passport';
 import axios from 'axios';
+import dotenv from 'dotenv';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService, private configService: ConfigService) {}
 
   @Get('signin')
   async signIn(@Req() request: Request) {
@@ -37,7 +39,7 @@ export class AuthController {
       return data;
     } catch (error) {
       if (error instanceof BadRequestException) {
-        throw error; // Rethrow the error to send the correct status code and message
+        throw error;
       }
       throw new InternalServerErrorException('An unexpected error occurred');
     }
@@ -57,7 +59,7 @@ export class AuthController {
       return data;
     } catch (error) {
       if (error instanceof BadRequestException) {
-        throw error; // Rethrow the error to send the correct status code and message
+        throw error;
       }
       throw new InternalServerErrorException('An unexpected error occurred during sign up');
     }
@@ -87,30 +89,59 @@ export class AuthController {
 
 
   @Get('github')
-  @UseGuards(AuthGuard('github'))
-  async login() {
-    //
+  async login(@Req() req: Request, @Res() res: Response) {
+    const accessToken = req.cookies['accessToken'];
+
+    if (accessToken) {
+      const data =  await this.authService.getUser(accessToken);
+
+      const supabaseUserId = data.user.id;
+
+      const tempToken = await this.authService.setTempToken(supabaseUserId);
+
+
+      const clientId = this.configService.get<string>('GITHUB_CLIENT_ID');
+      const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=user:email&state=${tempToken}`;
+
+
+      res.redirect(githubAuthUrl);
+    } else {
+      res.status(401).json({ message: 'No access token found' });
+    }
   }
 
   @Get('callback')
-  @UseGuards(AuthGuard('github'))
   async authCallback(@Req() req: any, @Res() res: Response) {
-    const user = req.user;
-    const githubAccessToken = user.accessToken; // Récupère le token d'accès GitHub
+    const tempToken = req.query.state;
+    const code: string = req.query.code;
 
-    console.log(user);
-    res.cookie('githubAccessToken', githubAccessToken, { httpOnly: false });
+    const clientId = this.configService.get<string>('GITHUB_CLIENT_ID');
+    const clientSecret = this.configService.get<string>('GITHUB_CLIENT_SECRET');
+    console.log('code :', code);
 
-    axios
-      .get('https://api.github.com/user/emails', {
-        headers: { Authorization: `token ${githubAccessToken}` },
-      })
-      .then((response) => {
-        console.log(response.data);
-      })
-      .catch((error) => {
-        console.error(error);
+    try {
+      const tokenResponse = await axios.post('https://github.com/login/oauth/access_token', {
+        client_id: clientId,
+        client_secret: clientSecret,
+        code: code,
+      }, {
+        headers: { 'Accept': 'application/json' }
       });
+
+      console.log(tokenResponse.data);
+
+      const githubAccessToken = tokenResponse.data.access_token;
+      const githubRefreshToken = tokenResponse.data.refresh_token;
+
+      const supabaseUserId = await this.authService.getSupabaseUserIdFromTempToken(tempToken);
+      await this.authService.storeGithubAccessToken(supabaseUserId, githubAccessToken, githubRefreshToken);
+
+      // Suite de votre logique...
+    } catch (error) {
+      console.error('Erreur lors de l\'échange du code GitHub :', error);
+      // Gérez l'erreur ici
+    }
+
     // Redirige vers le front-end
     res.redirect(`http://localhost:3000/profile`);
   }

@@ -1,9 +1,21 @@
 import { Injectable, Inject, BadRequestException } from '@nestjs/common';
-import { SupabaseClient } from '@supabase/supabase-js';
+import {
+  SupabaseClient,
+  User,
+  UserResponse,
+  createClient,
+} from '@supabase/supabase-js';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class AuthService {
-  constructor(@Inject('SUPABASE_CLIENT') private supabase: SupabaseClient) {}
+  private supabaseAdmin: SupabaseClient;
+  constructor(@Inject('SUPABASE_CLIENT') private supabase: SupabaseClient) {
+    this.supabaseAdmin = createClient(
+      process.env.SUPABASE_API_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+    );
+  }
 
   async signInWithPassword(email: string, password: string) {
     const { data, error } = await this.supabase.auth.signInWithPassword({
@@ -68,34 +80,69 @@ export class AuthService {
       if (error) {
         throw new BadRequestException(error.message);
       }
+      console.log(data);
+      const { data: profile, error: profileError } =
+        await this.supabase.auth.getSession();
 
-      return await this.supabase.auth.getSession();
+      if (profileError) {
+        throw new BadRequestException(profileError.message);
+      }
+
+      console.log(profile);
+      return data;
     } catch (error) {
       throw new BadRequestException(error.message);
     }
   }
 
-  // async signInOrSignUpWithGithub(email: string, access_token: string) {
-  //   const { data, error } = await this.supabase.auth.signUp({
-  //     email: email,
-  //     password: generate({ length: 12, numbers: true }),
-  //   });
+  async setTempToken(supabaseUserId: string): Promise<string> {
+    const tempToken = randomBytes(16).toString('hex');
+    const { data, error } = await this.supabaseAdmin
+      .from('user_auth')
+      .update({ tmp_token: tempToken })
+      .eq('user_id', supabaseUserId);
 
-  //   if (error.status === '409') {
-  //     const { data, error } = await this.supabase.auth.signIn({
-  //       email: email,
-  //       provider: 'github',
-  //       access_token: access_token,
-  //     });
+    if (error) {
+      throw new BadRequestException(error.message);
+    }
 
-  //     if (error) {
-  //       throw new Error(error.message);
-  //     }
+    return tempToken;
+  }
 
-  //     return data;
+  async getSupabaseUserIdFromTempToken(tempToken: string) {
+    const { data, error } = await this.supabaseAdmin
+      .from('user_auth')
+      .select('user_id')
+      .eq('tmp_token', tempToken)
+      .single();
 
-  //   }
+    if (error) {
+      throw new BadRequestException(error.message);
+    }
+    return data;
+  }
 
-  //   return data;
-  // }
+  async storeGithubAccessToken(user_id: any, githubAccessToken: string, githubRefreshToken: string) {
+    try {
+      const { data, error } = await this.supabaseAdmin
+        .from('user_auth')
+        .update({ github_access_token: githubAccessToken })
+        .eq('user_id', user_id.user_id);
+
+      console.log("Error :", error);
+      if (error) {
+        throw new BadRequestException(error.message);
+      }
+
+      await this.supabaseAdmin
+        .from('user_auth')
+        .update({ tmp_token: null })
+        .eq('user_id', user_id.user_id);
+
+      return data;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
 }
