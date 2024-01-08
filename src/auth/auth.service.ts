@@ -19,6 +19,21 @@ export class AuthService {
     return data;
   }
 
+  async getUserProfile(acessToken: string) {
+    let dataa = await this.supabase.auth.getUser(acessToken);
+
+    const { data, error } = await this.supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', dataa.data.user.id)
+      .single();
+
+    if (error) {
+      throw new BadRequestException(error.message);
+    }
+    return data;
+  }
+
   async signUp(email: string, password: string) {
     const { data, error } = await this.supabase.auth.signUp({
       email: email,

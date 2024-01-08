@@ -15,7 +15,6 @@ import { Response, Request } from 'express';
 import { validate } from 'class-validator';
 import { AuthGuard } from '@nestjs/passport';
 import axios from 'axios';
-import { UnauthorizedException } from '@nestjs/common';
 
 @Controller('auth')
 export class AuthController {
@@ -61,6 +60,17 @@ export class AuthController {
         throw error; // Rethrow the error to send the correct status code and message
       }
       throw new InternalServerErrorException('An unexpected error occurred during sign up');
+    }
+  }
+
+  @Get('profile')
+  async getProfile(@Req() request: Request) {
+    const accessToken = request.cookies['accessToken'];
+
+    if (accessToken) {
+      return await this.authService.getUserProfile(accessToken);
+    } else {
+      return { message: 'No access token found' };
     }
   }
 
