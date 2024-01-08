@@ -142,4 +142,18 @@ export class ActionController {
       );
     }
   }
+
+  @Get('/:id')
+  async findOneAction(@Req() req: any) {
+    try {
+      return await this.actionService.findOne(req.params.id);
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'An error occurred while retrieving action',
+      );
+    }
+  }
 }

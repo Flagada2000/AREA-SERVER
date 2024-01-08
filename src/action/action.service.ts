@@ -61,10 +61,17 @@ export class ActionService {
     return data;
   }
 
-
   async findAll() {
     const { data, error } = await this.supabase.from('actions').select('*');
     console.log(data);
+    return data;
+  }
+
+  async findOne(id: number) {
+    const { data, error } = await this.supabase
+      .from('actions')
+      .select('*')
+      .eq('id', id).single();
     return data;
   }
 }
