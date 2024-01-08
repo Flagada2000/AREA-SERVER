@@ -13,12 +13,15 @@ import { ServiceService } from './service/service.service';
 import { ReactionController } from './reaction/reaction.controller';
 import { ReactionService } from './reaction/reaction.service';
 import { ReactionModule } from './reaction/reaction.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { TasksService } from './scheduling/scheduling.service';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    ScheduleModule.forRoot(),
     AuthModule,
     SupabaseModule,
     ActionModule,
@@ -26,6 +29,6 @@ import { ReactionModule } from './reaction/reaction.module';
     ReactionModule,
   ],
   controllers: [AppController, ActionController, ServiceController, ReactionController],
-  providers: [AppService, ActionService, ServiceService, ReactionService],
+  providers: [AppService, ActionService, ServiceService, ReactionService, TasksService],
 })
 export class AppModule {}
