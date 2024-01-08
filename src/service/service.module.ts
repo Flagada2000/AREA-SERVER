@@ -15,7 +15,7 @@ export class ServiceModule {
     consumer
       .apply(AuthMiddleware) // Apply your AuthMiddleware
       .forRoutes(
-        { path: 'service/', method: RequestMethod.GET } // Specify the route to protect
+        { path: 'service/', method: RequestMethod.GET }
       );
   }
 }
