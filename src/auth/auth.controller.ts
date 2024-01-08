@@ -44,7 +44,7 @@ export class AuthController {
   }
 
   @Post('signup')
-  async signUp(@Body() loginDto: LoginDto, @Res() response: Response) {
+  async signUp(@Body() loginDto: LoginDto, @Req() request: Request) {
     const validationErrors = await validate(loginDto);
     if (validationErrors.length > 0) {
       throw new BadRequestException(validationErrors);
@@ -52,8 +52,8 @@ export class AuthController {
 
     try {
       const data = await this.authService.signUp(loginDto.email, loginDto.password);
-      response.cookie('accessToken', data.session.access_token, { httpOnly: false, maxAge: data.session.expires_at });
-      response.cookie('refreshToken', data.session.refresh_token, { httpOnly: false, maxAge: data.session.expires_at });
+      request.res.cookie('accessToken', data.session.access_token, { httpOnly: false, maxAge: data.session.expires_at });
+      request.res.cookie('refreshToken', data.session.refresh_token, { httpOnly: false, maxAge: data.session.expires_at });
       return data;
     } catch (error) {
       if (error instanceof BadRequestException) {
