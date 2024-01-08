@@ -1,55 +1,38 @@
-import { Injectable, NestMiddleware } from '@nestjs/common';
-import axios from 'axios';
+import { Injectable, NestMiddleware, Inject } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import * as jwt from 'jsonwebtoken';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
-  async use(req: Request, res: Response, next: NextFunction) {
-    const token = req.cookies['accessToken'];
+  constructor(@Inject('SUPABASE_CLIENT') private supabase: SupabaseClient) {}
 
-    if (!token) {
-      return res.status(401).json({ message: 'Access token is missing' });
+  async use(req: Request, res: Response, next: NextFunction) {
+    const accessToken = req.cookies['accessToken'];
+    const refreshToken = req.cookies['refreshToken'];
+
+    if (!accessToken || !refreshToken) {
+      return res.status(401).json({ message: 'Access token or refresh token is missing' });
     }
 
     try {
-      const decodedToken = jwt.decode(token) as jwt.JwtPayload;
-      const isExpired = decodedToken && Date.now() >= decodedToken.exp * 1000;
+      // Set the session in Supabase client
+      const { data, error } = await this.supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
 
-      if (isExpired) {
-        const refreshToken = req.cookies['refreshToken'];
-        if (!refreshToken) {
-          return res.status(401).json({ message: 'Refresh token not found' });
-        }
-
-        const newTokenResponse = await axios.post(`${process.env.SUPABASE_API_URL}/auth/v1/token`, {
-          refresh_token: refreshToken,
-          grant_type: 'refresh_token',
-          apikey: process.env.SUPABASE_ANON_KEY,
-        });
-
-        const newAccessToken = newTokenResponse.data.access_token;
-        if (newAccessToken) {
-          res.cookie('accessToken', newAccessToken, { httpOnly: true });
-          req.cookies['accessToken'] = newAccessToken;
-          res.cookie('refreshToken', newTokenResponse.data.refresh_token, { httpOnly: true });
-          req.cookies['refreshToken'] = newTokenResponse.data.refresh_token;
-          next();
-        } else {
-          throw new Error('Supabase did not return a new access token.');
-        }
-      } else {
-        next();
+      if (error) {
+        console.error('Error setting session:', error.message || error);
+        return res.status(500).json({ message: 'Internal Server Error' });
       }
+
+      if (data.session.access_token != accessToken) {
+        res.cookie('accessToken', data.session.access_token, { httpOnly: false, maxAge: data.session.expires_at });
+      }
+
+      if (data.session.refresh_token != refreshToken) {
+        res.cookie('refreshToken', data.session.refresh_token, { httpOnly: false, maxAge: data.session.expires_at });
+      }
+
+      next();
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const response = error.response;
-        if (response && response.data) {
-          console.error('Supabase Error:', response.data);
-          return res.status(response.status).json({ message: response.data.message });
-        }
-      }
-
       console.error('Error in AuthMiddleware:', error.message || error);
       return res.status(500).json({ message: 'Internal Server Error' });
     }
