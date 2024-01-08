@@ -109,7 +109,7 @@ export class ActionController {
   }
 
   @Get('user')
-  async findAll(@Req() req: any) {
+  async findAllForUser(@Req() req: any) {
     const userResponse = await this.authService.getUser(
       req.cookies['accessToken'],
     );
@@ -125,6 +125,20 @@ export class ActionController {
       }
       throw new InternalServerErrorException(
         'An error occurred while retrieving user actions',
+      );
+    }
+  }
+
+  @Get()
+  async findAllActions() {
+    try {
+      return await this.actionService.findAll();
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'An error occurred while retrieving actions',
       );
     }
   }

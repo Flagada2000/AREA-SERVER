@@ -66,20 +66,12 @@ export class AuthController {
 
   @Get('me')
   async me(@Req() request: Request, @Res() response: Response) {
-    try {
-      const accessToken = request.cookies['accessToken'];
+    const accessToken = request.cookies['accessToken'];
 
-      if (!accessToken) {
-        throw new UnauthorizedException('No access token found');
-      }
-
-      const data = await this.authService.getUser(accessToken);
-      return data;
-    } catch (error) {
-      if (error instanceof UnauthorizedException) {
-        throw error; // Rethrow for correct status code and message
-      }
-      throw new InternalServerErrorException('An unexpected error occurred while fetching user data');
+    if (accessToken) {
+      return response.status(200).json(await this.authService.getUser(accessToken));
+    } else {
+      return response.status(401).json({ message: 'No access token found' });
     }
   }
 

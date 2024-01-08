@@ -34,19 +34,11 @@ export class AuthService {
 
   async getUser(accessToken: string | undefined) {
     try {
-      if (!accessToken) {
-        const { data, error } = await this.supabase.auth.getUser();
-        if (error) {
-          throw new BadRequestException(error.message);
-        }
-        return data;
-      } else {
-        const { data, error } = await this.supabase.auth.getUser(accessToken);
-        if (error) {
-          throw new BadRequestException(error.message);
-        }
-        return data;
+      const { data, error } = await this.supabase.auth.getUser(accessToken);
+      if (error) {
+        throw new BadRequestException(error.message);
       }
+      return data;
     } catch (error) {
       throw new BadRequestException(error.message);
     }
