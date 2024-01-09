@@ -15,6 +15,7 @@ import { ReactionService } from './reaction/reaction.service';
 import { ReactionModule } from './reaction/reaction.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TasksService } from './scheduling/scheduling.service';
+import { GithubModule } from './service/github/github.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { TasksService } from './scheduling/scheduling.service';
     ActionModule,
     ServiceModule,
     ReactionModule,
+    GithubModule,
   ],
   controllers: [AppController, ActionController, ServiceController, ReactionController],
   providers: [AppService, ActionService, ServiceService, ReactionService, TasksService],
