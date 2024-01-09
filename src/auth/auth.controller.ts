@@ -97,6 +97,8 @@ export class AuthController {
 
       const supabaseUserId = data.user.id;
 
+      console.log(data);
+
       const tempToken = await this.authService.setTempToken(supabaseUserId);
 
 
@@ -132,6 +134,15 @@ export class AuthController {
 
       const githubAccessToken = tokenResponse.data.access_token;
       const githubRefreshToken = tokenResponse.data.refresh_token;
+
+      axios.get('https://api.github.com/user', {
+        headers: {
+          'Authorization': `token ${githubAccessToken}`,
+          'Accept': 'application/json'
+          },
+          }).then((response) => {
+            console.log(response.data);
+          });
 
       const supabaseUserId = await this.authService.getSupabaseUserIdFromTempToken(tempToken);
       await this.authService.storeGithubAccessToken(supabaseUserId, githubAccessToken, githubRefreshToken);
