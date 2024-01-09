@@ -3,9 +3,10 @@ import { ServiceService } from './service.service';
 import { ServiceController } from './service.controller';
 import { AuthMiddleware } from 'src/auth/auth.middleware';
 import { AuthModule } from 'src/auth/auth.module';
+import { GithubModule } from './github/github.module';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, GithubModule],
   providers: [ServiceService],
   controllers: [ServiceController],
 
