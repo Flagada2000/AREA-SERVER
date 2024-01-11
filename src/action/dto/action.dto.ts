@@ -16,3 +16,24 @@ export class UpdateUserActionDto {
     action_config: string;
     id: number;
 }
+
+export class UserActionDto {
+    id: number;
+    user_id: string;
+    action_id: number;
+    action_config: string;
+
+    constructor(init?: Partial<UserActionDto>) {
+        Object.assign(this, init);
+    }
+}
+
+export class ActionDto {
+    id: number;
+    service_id: number;
+    action_name: string;
+
+    constructor(init?: Partial<ActionDto>) {
+        Object.assign(this, init);
+    }
+}
