@@ -96,6 +96,7 @@ export class AuthService {
   }
 
   async setTempToken(supabaseUserId: string): Promise<string> {
+    console.log(supabaseUserId);
     const tempToken = randomBytes(16).toString('hex');
     const { data, error } = await this.supabaseAdmin
       .from('user_auth')
@@ -103,6 +104,7 @@ export class AuthService {
       .eq('user_id', supabaseUserId);
 
     if (error) {
+      console.log(error);
       throw new BadRequestException(error.message);
     }
 
@@ -145,4 +147,28 @@ export class AuthService {
     }
   }
 
+  async storeOutlookAccessToken(user_id: any, outlookAccessToken: string, outlookRefreshToken: string) {
+    try {
+      console.log("user_id :", user_id)
+      const { data, error } = await this.supabaseAdmin
+        .from('user_auth')
+        .update({ outlook_access_token: outlookAccessToken, outlook_refresh_token: outlookRefreshToken })
+        .eq('user_id', user_id.user_id);
+
+      console.log("Error :", error);
+      if (error) {
+        throw new BadRequestException(error.message);
+      }
+
+      await this.supabaseAdmin
+        .from('user_auth')
+        .update({ tmp_token: null })
+        .eq('user_id', user_id.user_id)
+        .single();
+
+      return data;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
 }

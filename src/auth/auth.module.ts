@@ -2,22 +2,24 @@ import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/c
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { SupabaseModule } from '../supabase/supabase.module';
-import { GithubStrategy } from './auth.strategy';
+import { GithubStrategy, OutlookStrategy } from './auth.strategy';
 import { AuthMiddleware } from './auth.middleware'; // Import your AuthMiddleware
 
 @Module({
   exports: [AuthService],
   imports: [SupabaseModule],
-  providers: [AuthService, GithubStrategy],
+  providers: [AuthService, GithubStrategy, OutlookStrategy],
   controllers: [AuthController],
 })
 
 export class AuthModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(AuthMiddleware) // Apply your AuthMiddleware
+      .apply(AuthMiddleware)
       .forRoutes(
-        { path: 'auth/me', method: RequestMethod.GET } // Specify the route to protect
+        { path: 'auth/me', method: RequestMethod.GET },
+        { path: 'auth/outlook', method: RequestMethod.GET },
+        { path: 'auth/github', method: RequestMethod.GET }
       );
   }
 }
